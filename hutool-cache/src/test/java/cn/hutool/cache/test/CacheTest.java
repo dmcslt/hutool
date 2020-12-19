@@ -18,6 +18,12 @@ public class CacheTest {
 	@Test
 	public void fifoCacheTest(){
 		Cache<String,String> fifoCache = CacheUtil.newFIFOCache(3);
+		fifoCache.setListener((key, value)->{
+			// 监听测试，此测试中只有key1被移除，测试是否监听成功
+			Assert.assertEquals("key1", key);
+			Assert.assertEquals("value1", value);
+		});
+
 		fifoCache.put("key1", "value1", DateUnit.SECOND.getMillis() * 3);
 		fifoCache.put("key2", "value2", DateUnit.SECOND.getMillis() * 3);
 		fifoCache.put("key3", "value3", DateUnit.SECOND.getMillis() * 3);
@@ -58,7 +64,7 @@ public class CacheTest {
 		//使用时间推近
 		lruCache.get("key1");
 		lruCache.put("key4", "value4", DateUnit.SECOND.getMillis() * 3);
-		
+
 		String value1 = lruCache.get("key1");
 		Assert.assertNotNull(value1);
 		//由于缓存容量只有3，当加入第四个元素的时候，根据LRU规则，最少使用的将被移除（2被移除）

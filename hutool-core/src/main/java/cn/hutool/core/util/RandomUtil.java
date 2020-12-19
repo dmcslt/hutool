@@ -1,19 +1,5 @@
 package cn.hutool.core.util;
 
-import java.awt.Color;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
-
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DateTime;
@@ -22,6 +8,20 @@ import cn.hutool.core.exceptions.UtilException;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.lang.WeightRandom;
 import cn.hutool.core.lang.WeightRandom.WeightObj;
+
+import java.awt.Color;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 随机工具类
@@ -47,6 +47,11 @@ public class RandomUtil {
 	 * 获取随机数生成器对象<br>
 	 * ThreadLocalRandom是JDK 7之后提供并发产生随机数，能够解决多个线程发生的竞争争夺。
 	 *
+	 * <p>
+	 * 注意：此方法返回的{@link ThreadLocalRandom}不可以在多线程环境下共享对象，否则有重复随机数问题。
+	 * 见：https://www.jianshu.com/p/89dfe990295c
+	 * </p>
+	 *
 	 * @return {@link ThreadLocalRandom}
 	 * @since 3.1.2
 	 */
@@ -66,7 +71,7 @@ public class RandomUtil {
 	}
 
 	/**
-	 * 获取{@link SecureRandom}，类提供加密的强随机数生成器 (RNG)<br>
+	 * 获取SHA1PRNG的{@link SecureRandom}，类提供加密的强随机数生成器 (RNG)<br>
 	 * 注意：此方法获取的是伪随机序列发生器PRNG（pseudo-random number generator）
 	 *
 	 * <p>
@@ -76,11 +81,31 @@ public class RandomUtil {
 	 * @since 3.1.2
 	 */
 	public static SecureRandom getSecureRandom() {
+		return getSecureRandom(null);
+	}
+
+	/**
+	 * 获取SHA1PRNG的{@link SecureRandom}，类提供加密的强随机数生成器 (RNG)<br>
+	 * 注意：此方法获取的是伪随机序列发生器PRNG（pseudo-random number generator）
+	 *
+	 * <p>
+	 * 相关说明见：https://stackoverflow.com/questions/137212/how-to-solve-slow-java-securerandom
+	 *
+	 * @param seed 随机数种子
+	 * @return {@link SecureRandom}
+	 * @since 5.5.2
+	 */
+	public static SecureRandom getSecureRandom(byte[] seed) {
+		SecureRandom random;
 		try {
-			return SecureRandom.getInstance("SHA1PRNG");
+			random = SecureRandom.getInstance("SHA1PRNG");
 		} catch (NoSuchAlgorithmException e) {
 			throw new UtilException(e);
 		}
+		if(null != seed){
+			random.setSeed(seed);
+		}
+		return random;
 	}
 
 	/**
@@ -118,7 +143,7 @@ public class RandomUtil {
 	}
 
 	/**
-	 * 获得随机数[0, 2^32)
+	 * 获得随机数int值
 	 *
 	 * @return 随机数
 	 */
@@ -305,6 +330,9 @@ public class RandomUtil {
 	 * @return 随机元素
 	 */
 	public static <T> T randomEle(List<T> list, int limit) {
+		if (list.size() < limit){
+			limit = list.size();
+		}
 		return list.get(randomInt(limit));
 	}
 
@@ -330,6 +358,9 @@ public class RandomUtil {
 	 * @since 3.3.0
 	 */
 	public static <T> T randomEle(T[] array, int limit) {
+		if (array.length < limit){
+			limit = array.length;
+		}
 		return array[randomInt(limit)];
 	}
 
@@ -352,6 +383,28 @@ public class RandomUtil {
 	}
 
 	/**
+	 * 随机获得列表中的一定量的元素，返回List<br>
+	 * 此方法与{@link #randomEles(List, int)} 不同点在于，不会获取重复位置的元素
+	 *
+	 * @param source 列表
+	 * @param count  随机取出的个数
+	 * @param <T>    元素类型
+	 * @return 随机列表
+	 * @since 5.2.1
+	 */
+	public static <T> List<T> randomEleList(List<T> source, int count) {
+		if (count >= source.size()) {
+			return source;
+		}
+		final int[] randomList = ArrayUtil.sub(randomInts(source.size()), 0, count);
+		List<T> result = new ArrayList<>();
+		for (int e : randomList) {
+			result.add(source.get(e));
+		}
+		return result;
+	}
+
+	/**
 	 * 随机获得列表中的一定量的不重复元素，返回Set
 	 *
 	 * @param <T>        元素类型
@@ -366,13 +419,29 @@ public class RandomUtil {
 			throw new IllegalArgumentException("Count is larger than collection distinct size !");
 		}
 
-		final HashSet<T> result = new HashSet<>(count);
+		final Set<T> result = new LinkedHashSet<>(count);
 		int limit = source.size();
 		while (result.size() < count) {
 			result.add(randomEle(source, limit));
 		}
 
 		return result;
+	}
+
+	/**
+	 * 创建指定长度的随机索引
+	 *
+	 * @param length 长度
+	 * @return 随机索引
+	 * @since 5.2.1
+	 */
+	public static int[] randomInts(int length) {
+		final int[] range = ArrayUtil.range(length);
+		for (int i = 0; i < length; i++) {
+			int random = randomInt(i, length);
+			ArrayUtil.swap(range, i, random);
+		}
+		return range;
 	}
 
 	/**
@@ -449,7 +518,7 @@ public class RandomUtil {
 	 * @return 随机数字字符
 	 * @since 3.1.2
 	 */
-	public static int randomNumber() {
+	public static char randomNumber() {
 		return randomChar(BASE_NUMBER);
 	}
 
@@ -479,10 +548,12 @@ public class RandomUtil {
 	 *
 	 * @return 随机颜色
 	 * @since 4.1.5
+	 * @deprecated 使用ImgUtil.randomColor()
 	 */
+	@Deprecated
 	public static Color randomColor() {
 		final Random random = getRandom();
-		return new Color(random.nextInt(255), random.nextInt(255), random.nextInt(255));
+		return new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256));
 	}
 
 	/**
@@ -561,4 +632,5 @@ public class RandomUtil {
 
 		return DateUtil.offset(baseDate, dateField, randomInt(min, max));
 	}
+
 }

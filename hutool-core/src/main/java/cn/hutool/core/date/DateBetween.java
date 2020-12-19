@@ -1,11 +1,10 @@
 package cn.hutool.core.date;
 
+import cn.hutool.core.lang.Assert;
+
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
-
-import cn.hutool.core.lang.Assert;
-import cn.hutool.core.lang.Console;
 
 /**
  * 日期间隔
@@ -17,9 +16,9 @@ public class DateBetween implements Serializable{
 	private static final long serialVersionUID = 1L;
 
 	/** 开始日期 */
-	private Date begin;
+	private final Date begin;
 	/** 结束日期 */
-	private Date end;
+	private final Date end;
 
 	/**
 	 * 创建<br>
@@ -27,7 +26,7 @@ public class DateBetween implements Serializable{
 	 * 
 	 * @param begin 起始时间
 	 * @param end 结束时间
-	 * @return {@link DateBetween}
+	 * @return DateBetween
 	 * @since 3.2.3
 	 */
 	public static DateBetween create(Date begin, Date end) {
@@ -41,7 +40,7 @@ public class DateBetween implements Serializable{
 	 * @param begin 起始时间
 	 * @param end 结束时间
 	 * @param isAbs 日期间隔是否只保留绝对值正数
-	 * @return {@link DateBetween}
+	 * @return DateBetween
 	 * @since 3.2.3
 	 */
 	public static DateBetween create(Date begin, Date end, boolean isAbs) {
@@ -96,7 +95,7 @@ public class DateBetween implements Serializable{
 
 	/**
 	 * 计算两个日期相差月数<br>
-	 * 在非重置情况下，如果起始日期的天小于结束日期的天，月数要少算1（不足1个月）
+	 * 在非重置情况下，如果起始日期的天大于结束日期的天，月数要少算1（不足1个月）
 	 * 
 	 * @param isReset 是否重置时间为起始时间（重置天时分秒）
 	 * @return 相差月数
@@ -123,7 +122,7 @@ public class DateBetween implements Serializable{
 
 	/**
 	 * 计算两个日期相差年数<br>
-	 * 在非重置情况下，如果起始日期的月小于结束日期的月，年数要少算1（不足1年）
+	 * 在非重置情况下，如果起始日期的月大于结束日期的月，年数要少算1（不足1年）
 	 * 
 	 * @param isReset 是否重置时间为起始时间（重置月天时分秒）
 	 * @return 相差年数
@@ -160,12 +159,12 @@ public class DateBetween implements Serializable{
 	 * @param level 级别
 	 * @return 字符串
 	 */
-	public String toString(BetweenFormater.Level level) {
+	public String toString(BetweenFormatter.Level level) {
 		return DateUtil.formatBetween(between(DateUnit.MS), level);
 	}
 
 	@Override
 	public String toString() {
-		return toString(BetweenFormater.Level.MILLSECOND);
+		return toString(BetweenFormatter.Level.MILLISECOND);
 	}
 }

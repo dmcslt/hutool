@@ -32,9 +32,7 @@ public class MailAccount implements Serializable {
 	private static final String MAIL_DEBUG = "mail.debug";
 	private static final String SPLIT_LONG_PARAMS = "mail.mime.splitlongparameters";
 
-	public static final String MAIL_SETTING_PATH = "config/mail.setting";
-	public static final String MAIL_SETTING_PATH2 = "config/mailAccount.setting";
-	public static final String MAIL_SETTING_PATH3 = "mail.setting";
+	public static final String[] MAIL_SETTING_PATHS = new String[]{"config/mail.setting", "config/mailAccount.setting", "mail.setting"};
 
 	/**
 	 * SMTP服务器域名
@@ -467,7 +465,7 @@ public class MailAccount implements Serializable {
 
 		if (this.starttlsEnable) {
 			//STARTTLS是对纯文本通信协议的扩展。它将纯文本连接升级为加密连接（TLS或SSL）， 而不是使用一个单独的加密通信端口。
-			p.put(STARTTLS_ENABLE, String.valueOf(this.starttlsEnable));
+			p.put(STARTTLS_ENABLE, "true");
 
 			if (null == this.sslEnable) {
 				//为了兼容旧版本，当用户没有此项配置时，按照starttlsEnable开启状态时对待
